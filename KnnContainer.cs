@@ -579,20 +579,16 @@ namespace KNN {
 			var rootNode = RootNode;
 			var nodePtr = m_nodes.GetUnsafePtr();
 			float rad2 = radiusMax * radiusMax;
+			int c = 0;
 			
 			// Biggest Smallest Squared Radius
 			// float bssr = float.PositiveInfinity;
 			float3 rootClosestPoint = rootNode.Bounds.ClosestPoint(queryPosition);
 			
 			PushToQueue(m_rootNodeIndex[0], rootClosestPoint, queryPosition, ref temp);
-			
 			// searching
 			while (temp.MinHeap.Count > 0) {
 				KdQueryNode queryNode = temp.MinHeap.PopObjFromQueue();
-
-				// if (queryNode.Distance > rad2) {
-				// 	continue;
-				// }
 
 				ref KdNode node = ref UnsafeUtilityEx.ArrayElementAsRef<KdNode>(nodePtr, queryNode.NodeIndex);
 
@@ -645,25 +641,12 @@ namespace KNN {
 						float sqrDist = math.lengthsq(points[index] - queryPosition);
 
 						if (sqrDist <= rad2) {
-							temp.Heap.PushObj(index, sqrDist);
+							// temp.Heap.PushObj(index, sqrDist);
+							result[c++] = index;
 						}
 					}
 				}
 			}
-
-			int N = temp.Heap.Count;
-			for (int i = 0; i < temp.Heap.Count; i++) {
-				result[i] = temp.Heap.PopObj();
-			}
-			
-			// if(N == 0){
-			// 	UnityEngine.Debug.Log("Found "+N);
-			// }
-			// else{	
-			// 	UnityEngine.Debug.Log("Found "+N+" / ");
-			// }
-
 		}
-
 	}
 }

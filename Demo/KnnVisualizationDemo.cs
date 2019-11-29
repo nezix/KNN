@@ -29,7 +29,7 @@ public class KnnVisualizationDemo : MonoBehaviour {
 	KnnContainer m_container;
 
 	void Start() {
-		if(radiusSearchMode){
+		if (radiusSearchMode) {
 			QueryK = ParticleCount;
 		}
 		m_system = GetComponent<ParticleSystem>();
@@ -111,19 +111,20 @@ public class KnnVisualizationDemo : MonoBehaviour {
 			m_queryColors[i] = p.Color;
 		}
 
-		if(radiusSearchMode){
+		if (radiusSearchMode) {
 			// Now do the KNN query
 			var query = new RadiusSeachBatchQueryJob(m_container, m_queryPositions, m_results, radiusSearch);
 
 			// Schedule query, dependent on the rebuild
 			// We're only doing a very limited number of points - so allow each query to have it's own job
 			query.ScheduleBatch(m_queryPositions.Length, 1, rebuildHandle).Complete();
+
 			for (int i = 0; i < QueryProbe.All.Count; i++) {
 				var p = QueryProbe.All[i];
-				p.transform.localScale = Vector3.one * radiusSearch;
+				p.transform.localScale = Vector3.one * radiusSearch * 2;
 			}
 		}
-		else{
+		else {
 			// Now do the KNN query
 			var query = new KNearestBatchQueryJob(m_container, m_queryPositions, m_results);
 
