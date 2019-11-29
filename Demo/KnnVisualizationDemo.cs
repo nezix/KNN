@@ -113,7 +113,7 @@ public class KnnVisualizationDemo : MonoBehaviour {
 
 		if (radiusSearchMode) {
 			// Now do the KNN query
-			var query = new RadiusSeachBatchQueryJob(m_container, m_queryPositions, m_results, radiusSearch);
+			var query = new RadiusSearchBatchQueryJob(m_container, m_queryPositions, m_results, radiusSearch);
 
 			// Schedule query, dependent on the rebuild
 			// We're only doing a very limited number of points - so allow each query to have it's own job

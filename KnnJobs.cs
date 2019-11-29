@@ -64,7 +64,7 @@ namespace KNN.Jobs {
 	}
 
 	[BurstCompile(CompileSynchronously = true)]
-	public struct RadiusSeachBatchQueryJob : IJobParallelForBatch {
+	public struct RadiusSearchBatchQueryJob : IJobParallelForBatch {
 		[ReadOnly] KnnContainer m_container;
 
 		[ReadOnly]
@@ -78,7 +78,7 @@ namespace KNN.Jobs {
 		int m_k;
 		float m_radius;
 
-		public RadiusSeachBatchQueryJob(KnnContainer container, NativeArray<float3> queryPositions, NativeSlice<int> results, float r) {
+		public RadiusSearchBatchQueryJob(KnnContainer container, NativeArray<float3> queryPositions, NativeSlice<int> results, float r) {
 			m_container = container;
 			m_queryPositions = queryPositions;
 			m_results = results;
@@ -86,10 +86,10 @@ namespace KNN.Jobs {
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
 			if (queryPositions.Length == 0 || results.Length != queryPositions.Length * m_container.Points.Length) {
-				Debug.LogError("Make sure your results array length is (querypositions array length x container length)");
+				Debug.LogError("Make sure your results array length is = (querypositions array length x container length)");
 			}
 #endif
-			if(m_radius <= 0.0f){
+			if(m_radius <= 0.0f) {
 				Debug.LogError("Search radius is not valid");
 			}
 
