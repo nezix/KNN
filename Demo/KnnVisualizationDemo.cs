@@ -11,8 +11,12 @@ using UnityEngine.Experimental.ParticleSystemJobs;
 // But this is meant to be a really simple demo and not an ECS demo
 // I might look into deeper ECS integration at some point
 public class KnnVisualizationDemo : MonoBehaviour {
+	public bool radiusSearchMode = false;
+
 	public int ParticleCount = 20000;
 	public int QueryK = 20;
+
+	public float radiusSearch = 2.0f;
 
 	ParticleSystem m_system;
 
@@ -25,6 +29,9 @@ public class KnnVisualizationDemo : MonoBehaviour {
 	KnnContainer m_container;
 
 	void Start() {
+		if(radiusSearchMode){
+			QueryK = ParticleCount;
+		}
 		m_system = GetComponent<ParticleSystem>();
 
 		m_system.Emit(ParticleCount);
@@ -104,11 +111,25 @@ public class KnnVisualizationDemo : MonoBehaviour {
 			m_queryColors[i] = p.Color;
 		}
 
-		// Now do the KNN query
-		var query = new KNearestBatchQueryJob(m_container, m_queryPositions, m_results);
+		if(radiusSearchMode){
+			// Now do the KNN query
+			var query = new RadiusSeachBatchQueryJob(m_container, m_queryPositions, m_results, radiusSearch);
 
-		// Schedule query, dependent on the rebuild
-		// We're only doing a very limited number of points - so allow each query to have it's own job
-		query.ScheduleBatch(m_queryPositions.Length, 1, rebuildHandle).Complete();
+			// Schedule query, dependent on the rebuild
+			// We're only doing a very limited number of points - so allow each query to have it's own job
+			query.ScheduleBatch(m_queryPositions.Length, 1, rebuildHandle).Complete();
+			for (int i = 0; i < QueryProbe.All.Count; i++) {
+				var p = QueryProbe.All[i];
+				p.transform.localScale = Vector3.one * radiusSearch;
+			}
+		}
+		else{
+			// Now do the KNN query
+			var query = new KNearestBatchQueryJob(m_container, m_queryPositions, m_results);
+
+			// Schedule query, dependent on the rebuild
+			// We're only doing a very limited number of points - so allow each query to have it's own job
+			query.ScheduleBatch(m_queryPositions.Length, 1, rebuildHandle).Complete();
+		}
 	}
 }

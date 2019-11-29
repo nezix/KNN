@@ -122,6 +122,12 @@ namespace KNN.Internal {
 			BubbleUpMin(Count);
 		}
 
+		public void PushObjQueue(KdQueryNode obj, float h) {
+			Count++;
+			heap[Count] = h;
+			objs[Count] = obj;
+		}
+
 		public KdQueryNode PopObj() {
 			KdQueryNode result = objs[1];
 
@@ -136,6 +142,14 @@ namespace KNN.Internal {
 
 			return result;
 		}
+
+		public KdQueryNode PopObjFromQueue() {
+			KdQueryNode result = objs[Count];
+
+			Count--;
+			return result;
+		}
+
 
 		public void Dispose() {
 			UnsafeUtility.Free(heap, m_allocator);

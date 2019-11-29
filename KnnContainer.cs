@@ -464,6 +464,18 @@ namespace KNN {
 			temp.MinHeap.PushObj(queryNode, sqrDist);
 		}
 
+		void PushToQueue(int nodeIndex, float3 tempClosestPoint, float3 queryPosition, ref KnnQueryTemp temp) {
+			float sqrDist = math.lengthsq(tempClosestPoint - queryPosition);
+			
+			KdQueryNode queryNode = new KdQueryNode {
+				NodeIndex = nodeIndex,
+				TempClosestPoint = tempClosestPoint,
+				Distance = sqrDist
+			};
+
+			temp.MinHeap.PushObjQueue(queryNode, sqrDist);
+		}
+
 		public void KNearest(float3 queryPosition, NativeSlice<int> result) {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
 			AtomicSafetyHandle.CheckReadAndThrow(m_Safety);
@@ -549,5 +561,109 @@ namespace KNN {
 				result[i - 1] = temp.Heap.PopObj();
 			}
 		}
+
+		public void RadiusSearch(float3 queryPosition, NativeSlice<int> result, float radiusMax) {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+			AtomicSafetyHandle.CheckReadAndThrow(m_Safety);
+#endif
+			var temp = KnnQueryTemp.Create(result.Length);
+			RadiusSearch(queryPosition, result, ref temp, radiusMax);
+		}
+		
+		internal unsafe void RadiusSearch(float3 queryPosition, NativeSlice<int> result, ref KnnQueryTemp temp, float radiusMax) {
+			int k = result.Length;
+			temp.Heap.Clear();
+			
+			var points = Points;
+			var permutation = m_permutation;
+			var rootNode = RootNode;
+			var nodePtr = m_nodes.GetUnsafePtr();
+			float rad2 = radiusMax * radiusMax;
+			
+			// Biggest Smallest Squared Radius
+			// float bssr = float.PositiveInfinity;
+			float3 rootClosestPoint = rootNode.Bounds.ClosestPoint(queryPosition);
+			
+			PushToQueue(m_rootNodeIndex[0], rootClosestPoint, queryPosition, ref temp);
+			
+			// searching
+			while (temp.MinHeap.Count > 0) {
+				KdQueryNode queryNode = temp.MinHeap.PopObjFromQueue();
+
+				// if (queryNode.Distance > rad2) {
+				// 	continue;
+				// }
+
+				ref KdNode node = ref UnsafeUtilityEx.ArrayElementAsRef<KdNode>(nodePtr, queryNode.NodeIndex);
+
+				if (!node.Leaf) {
+					int partitionAxis = node.PartitionAxis;
+					float partitionCoord = node.PartitionCoordinate;
+					float3 tempClosestPoint = queryNode.TempClosestPoint;
+
+					if (tempClosestPoint[partitionAxis] - partitionCoord < 0) {
+						// we already know we are on the side of negative bound/node,
+						// so we don't need to test for distance
+						// push to stack for later querying
+
+                        // tempClosestPoint is inside negative side
+                        // assign it to negativeChild
+						PushToQueue(node.NegativeChildIndex, tempClosestPoint, queryPosition, ref temp);
+
+						// project the tempClosestPoint to other bound
+						tempClosestPoint[partitionAxis] = partitionCoord;
+
+						float sqrDist = math.lengthsq(tempClosestPoint - queryPosition);
+
+						// testing other side
+
+						if (node.Count != 0 && sqrDist <= rad2) {
+							PushToQueue(node.PositiveChildIndex, tempClosestPoint, queryPosition, ref temp);
+						}
+					} else {
+						// we already know we are on the side of positive bound/node,
+						// so we don't need to test for distance
+						// push to stack for later querying
+
+						// tempClosestPoint is inside positive side
+                        // assign it to positiveChild
+						PushToQueue(node.PositiveChildIndex, tempClosestPoint, queryPosition, ref temp);
+
+						// project the tempClosestPoint to other bound
+						tempClosestPoint[partitionAxis] = partitionCoord;
+
+						float sqrDist = math.lengthsq(tempClosestPoint - queryPosition);
+
+						// testing other side
+						if (node.Count != 0 && sqrDist <= rad2) {
+							PushToQueue(node.NegativeChildIndex, tempClosestPoint, queryPosition, ref temp);
+						}
+					}
+				} else {// LEAF
+					for (int i = node.Start; i < node.End; i++) {
+						int index = permutation[i];
+						float sqrDist = math.lengthsq(points[index] - queryPosition);
+
+						if (sqrDist <= rad2) {
+							temp.Heap.PushObj(index, sqrDist);
+						}
+					}
+				}
+			}
+
+			int N = temp.Heap.Count;
+			for (int i = 0; i < temp.Heap.Count; i++) {
+				result[i] = temp.Heap.PopObj();
+			}
+			
+			// if(N == 0){
+			// 	UnityEngine.Debug.Log("Found "+N);
+			// }
+			// else{	
+			// 	UnityEngine.Debug.Log("Found "+N+" / ");
+			// }
+
+		}
+
 	}
 }
