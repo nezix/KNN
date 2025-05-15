@@ -4,7 +4,6 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Experimental.ParticleSystemJobs;
 
 // Ideally you really would use something like ECS to visualize the point cloud
 // And query from a job component system
@@ -56,7 +55,7 @@ public class KnnVisualizationDemo : MonoBehaviour {
 		m_queryPositions.Dispose();
 		m_queryColors.Dispose();
 	}
-
+	/* TODO: Fix the particle system jobs with the new version
 	// [BurstCompile(CompileSynchronously = true)]
 	struct ParticleJob : IParticleSystemJob {
 		[ReadOnly] public NativeArray<int> KnnResults;
@@ -135,6 +134,7 @@ public class KnnVisualizationDemo : MonoBehaviour {
 			});
 		}
 	}
+	*/
 
 	// After particle job
 	void LateUpdate() {
